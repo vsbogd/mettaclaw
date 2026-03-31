@@ -9,7 +9,7 @@
    (progn (configure maxLoops 50) ;20
           (configure sleepInterval 1) ;10
           (configure LLM gpt-5.4)
-          (configure provider ASICloud) ;OpenAI or ASICloud
+          (configure provider OpenAI) ;OpenAI or ASICloud
           (configure maxOutputToken 6000)
           (configure reasoningMode medium)
           (change-state! &prevmsg "")
@@ -38,7 +38,7 @@
                (progn (println! (---------iteration $k))
                       (let* (($msgrcv (string-safe (repr (receive))))
                              ($msgnew (prog1 (and (> (string_length $msgrcv) 0) (!= $msgrcv (get-state &prevmsg)))
-                                             (if (!= $msgrcv "") (change-state! &prevmsg $msgrcv) _)))
+                                             (if (> (string_length $msgrcv) 0) (change-state! &prevmsg $msgrcv) _)))
                              ($msg (get-state &prevmsg))
                              ($_ (if (and (> $k 1) $msgnew)
                                      (change-state! &loops (maxLoops)) _)))
@@ -50,7 +50,7 @@
                                        ($_ (println! (CHARS_SENT: (string_length $send) $send)))
                                        ($respi (if (== (provider) OpenAI)
                                                    (useGPT (LLM) (maxOutputToken) (reasoningMode) $send)
-                                                   (py-call (llm.useMiniMax $send))))
+                                                   (py-call (lib_llm_asicloud.useMiniMax $send))))
                                        ($resp (py-call (helper.balance_parentheses $respi)))
                                        ($response (if (== "(" (first_char $resp)) $resp (progn (println! $resp) (repr (REMEMBER:OUTPUT_NOTHING_ELSE_THAN: ((skill arg) ...))))))
                                        ($sexpr (catch (sread $response)))

@@ -30,10 +30,10 @@
        (py-call (mattermost.getLastMessage))))
 
 ;Send a message to all communication channels:
-!(change-state &lastsend "")
+!(change-state! &lastsend "")
 (= (send $msg)
-   (if (!= $msg &lastsend)
-       (progn (change-state &lastsend $msg)
+   (if (!= $msg (get-state &lastsend))
+       (progn (change-state! &lastsend $msg)
               (let $safemsg (string-replace $msg  "\n" "\\n")
                    (if (== (commchannel) irc)
                        (let $temp (cut) (py-call (irc.send_message $safemsg)))
