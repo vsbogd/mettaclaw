@@ -1,10 +1,10 @@
 (= (getSkills)
    (if (isTelegram)
        (;TELEGRAM ALLOWED SKILLS:
-        "- Remember a particular string: (remember string)"
-        "- Query long-term embedding memory: (query string)"
-        "- Pin a short-term working memory item: (pin string)"
-        "- Send message to user: (send string)"
+           "- Remember a particular string: (remember string)"
+           "- Query long-term embedding memory: (query string)"
+           "- Pin a short-term working memory item: (pin string)"
+           "- Send message to user: (send string)"
         "- Search the web: (search string)")
        (;DEFAULT ALLOWED SKILLS:
         "- Remember a particular string: (remember string)"
@@ -20,14 +20,14 @@
 
 (= (read-file $file)
    (if (isTelegram)
-       (Error read-file "DENIED: File access is disabled in Telegram mode.")
+    (Error read-file "DENIED: File access is disabled in Telegram mode.")
        (progn (translatePredicate (exists_file $file))
               (translatePredicate (read_file_to_string $file $content ()))
               $content)))
 
 (= (write-file $file $str)
    (if (isTelegram)
-       (Error write-file "DENIED: File mutation is disabled in Telegram mode.")
+        (Error write-file "DENIED: File mutation is disabled in Telegram mode.")
        (progn (translatePredicate (open $file write $Out))
               (translatePredicate (write $Out $str))
               (translatePredicate (close $Out))
@@ -35,8 +35,8 @@
 
 (= (append-file $file $str)
    (if (isTelegram)
-       (Error append-file "DENIED: File mutation is disabled in Telegram mode.")
-       (progn (translatePredicate (exists_file $file))
+        (Error append-file "DENIED: File mutation is disabled in Telegram mode.")
+        (progn (translatePredicate (exists_file $file))
               (translatePredicate (open $file append $Out))
               (translatePredicate (write $Out $str))
               (translatePredicate (nl $Out)),
@@ -47,11 +47,10 @@
 
 (= (shell $cmd)
    (if (isTelegram)
-       (Error shell "DENIED: Shell access is disabled in Telegram mode.")
+        (Error shell "DENIED: Shell access is disabled in Telegram mode.")
        (let $temp (cut) (translatePredicate (shell $cmd $out)) $out)))
 
 (= (metta $str)
    (if (isTelegram)
-       (Error metta "DENIED: MeTTa evaluation is disabled in Telegram mode.")
-       (let $code (sread $str)
-            (eval $code))))
+        (Error metta "DENIED: MeTTa evaluation is disabled in Telegram mode.")
+       (let $code (sread $str) (eval $code))))
