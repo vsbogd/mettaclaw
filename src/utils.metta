@@ -66,3 +66,21 @@
         (if (== $res ())
             $default
             (car-atom $res))))
+
+(= (read-line)
+   (read_line_to_string user_input))
+
+(= (parse-input $input)
+   (progn (translatePredicate (atom_string $Atom $input))
+          (atom_to_number $Atom)))
+
+(= (prompt-configure $name $default)
+   (let $cli (collapse (argk $name))
+        (if (!= $cli ())
+            (add-atom &self (= ($name) (car-atom $cli)))
+            (let* (($_ (println! ($name (default: $default))))
+                   ($input (read-line))
+                   ($value (if (== $input "")
+                               $default
+                               (parse-input $input))))
+                  (add-atom &self (= ($name) $value))))))

@@ -6,12 +6,13 @@
 (= (provider) (empty))
 
 (= (initLoop)
-   (progn (configure maxLoops 50) ;20
-          (configure sleepInterval 1) ;10
-          (configure LLM gpt-5.4)
-          (configure provider OpenAI) ;OpenAI or ASICloud
-          (configure maxOutputToken 6000)
-          (configure reasoningMode medium)
+   (progn (println! "=== MettaClaw Configuration ===")
+          (prompt-configure maxLoops 50)
+          (prompt-configure sleepInterval 1)
+          (prompt-configure LLM gpt-5.4)
+          (prompt-configure provider OpenAI)
+          (prompt-configure maxOutputToken 6000)
+          (prompt-configure reasoningMode medium)
           (change-state! &prevmsg "")
           (change-state! &lastresults "")
           (change-state! &loops (maxLoops))))
