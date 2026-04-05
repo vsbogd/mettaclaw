@@ -1,7 +1,6 @@
 import asyncio
 import os
 import threading
-from dotenv import load_dotenv
 from telegram import Update
 
 from telegram.ext import (
@@ -154,7 +153,6 @@ def getLastMessage():
 
 def start_telegram():
     """Initialize and start the Telegram bot with the given token."""
-    load_dotenv("../.env")
     bot_token = os.environ.get("BOT_TOKEN", "")
     chat_id = os.environ.get("CHAT_ID", "")
 
