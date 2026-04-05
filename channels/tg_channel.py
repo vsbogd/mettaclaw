@@ -12,7 +12,9 @@ import os
 class _TelegramChannel:
     """Telegram bot channel with windowed batching and bot-tag gating using aiogram."""
 
-    def __init__(self, config_path="memory/telegram_profile.yaml"):
+    def __init__(self, config_path=None):
+        self.config_path = os.path.join(os.path.dirname(__file__),  "..", "memory", "telegram_profile.yaml")
+        self.policy_path= os.path.join(os.path.dirname(__file__), "..", "memory", "policy.md")
         self.running = False
         self.thread = None
         self.loop = None
@@ -37,19 +39,20 @@ class _TelegramChannel:
         self.privacy_msg = "No sensitive data is stored."
         
         # Load config and policies if they exist
-        self.load_config(config_path)
+        self.load_config(self.config_path)
         self.load_policies()
         
         # Windowed batching state
         self._message_buffer = []  # List of (timestamp, name, text, message_id)
         self._should_reply = False
-        self._last_processed_window = ""
+        self._last_processed_window = None
         self._reply_to_id = None
         self._polling_task = None
 
     def load_config(self, config_path):
         """Load bot configuration from a YAML file."""
         if not os.path.exists(config_path):
+            print(f"Config file {config_path} not found. Using defaults.")
             logging.warning(f"Config file {config_path} not found. Using defaults.")
             return
 
@@ -69,14 +72,15 @@ class _TelegramChannel:
         except Exception as e:
             logging.error(f"Error loading config {config_path}: {e}")
 
-    def load_policies(self, policy_path="memory/policy.md"):
+    def load_policies(self):
         """Load and parse policy sections from a markdown file."""
-        if not os.path.exists(policy_path):
-            logging.warning(f"Policy file {policy_path} not found. Using defaults.")
+        
+        if not os.path.exists(self.policy_path):
+            logging.warning(f"Policy file {self.policy_path} not found. Using defaults.")
             return
 
         try:
-            with open(policy_path, "r") as f:
+            with open(self.policy_path, "r") as f:
                 content = f.read()
             
             sections = {}
@@ -99,15 +103,15 @@ class _TelegramChannel:
             self.about_msg = sections.get("ABOUT", self.about_msg)
             self.privacy_msg = sections.get("PRIVACY", self.privacy_msg)
             
-            logging.info(f"Loaded policies from {policy_path}: sections={list(sections.keys())}")
+            logging.info(f"Loaded policies from {self.policy_path}: sections={list(sections.keys())}")
         except Exception as e:
-            logging.error(f"Error loading policies {policy_path}: {e}")
+            logging.error(f"Error loading policies {self.policy_path}: {e}")
 
     def get_last_message(self):
         """Retrieve and consume the most recent processed window, thread-safe."""
         with self.msg_lock:
             tmp = self._last_processed_window
-            self._last_processed_window = ""
+            self._last_processed_window = None
             return tmp
 
     async def _start_cmd(self, message: types.Message):
@@ -226,7 +230,7 @@ class _TelegramChannel:
             asyncio.create_task(self._window_manager())
             
             # Start polling as a task so we can cancel it
-            self._polling_task = asyncio.create_task(self.dp.start_polling(self.bot, skip_updates=True))
+            self._polling_task = asyncio.create_task(self.dp.start_polling(self.bot, skip_updates=True, handle_signals=False))
             await self._polling_task
         except asyncio.CancelledError:
             pass
@@ -249,17 +253,18 @@ class _TelegramChannel:
             loop.close()
         self.loop = None
 
-    def start(self, token, chat_id=None, config_path="memory/telegram_profile.yaml"):
+    def start(self, token, chat_id=None, config_path=None):
         """Launch the Telegram bot on a daemon thread and begin polling."""
         self.running = True
         self.chat_id = chat_id
         # Reload config if path provided
-        if config_path:
-            self.load_config(config_path)
+        if config_path is None:
+            self.load_config(self.config_path)
             
         self.thread = threading.Thread(target=self._thread_main, args=(token,), daemon=True)
         self.thread.start()
         return self.thread
+        # return "OK"
 
     def stop(self):
         """Signal the polling loop to stop gracefully."""
@@ -288,7 +293,12 @@ _channel = _TelegramChannel()
 # Public API for MeTTa integration
 def getLastMessage():
     """Return the last processed batch window."""
-    return _channel.get_last_message()
+    last_msg = _channel.get_last_message()
+    if last_msg is None:
+        return ""
+        
+    print(f"Retrieved last message batch:\n{last_msg}\n") 
+    return str(last_msg)
 
 def start_telegram(token, chat_id=None):
     """Initialize and start the Telegram bot."""
