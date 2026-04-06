@@ -9,6 +9,16 @@ from aiogram.filters import Command
 import yaml
 import os
 
+log_file_path = os.path.join(os.path.dirname(__file__), "..", "telegram_bot.log")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(log_file_path),
+        logging.StreamHandler()
+    ]
+)
+
 class _TelegramChannel:
     """Telegram bot channel with windowed batching and bot-tag gating using aiogram."""
 
@@ -27,7 +37,7 @@ class _TelegramChannel:
         self.msg_lock = threading.Lock()
         
         # Default settings
-        self.window_seconds = 60
+        self.window_seconds = 10
         self.reply_only_on_tag = True
         self.reply_on_reply = True
         self.admin_ids = []
@@ -45,6 +55,7 @@ class _TelegramChannel:
         # self.local_memory = self._load_local_memory()
         self._muted_users = {}
         self._user_msg_rates = {}
+        self._user_mute_counts = {}
         
         # Windowed batching state
         self._message_buffer = []  # List of (timestamp, name, text, message_id)
@@ -65,7 +76,7 @@ class _TelegramChannel:
                 config = yaml.safe_load(f)
             
             tg_cfg = config.get("telegram", {})
-            self.window_seconds = tg_cfg.get("batching", {}).get("window_seconds", 60)
+            self.window_seconds = tg_cfg.get("batching", {}).get("window_seconds", 10)
             self.reply_only_on_tag = tg_cfg.get("reply_only_when_directly_tagged", True)
             self.reply_on_reply = tg_cfg.get("reply_on_reply_to_bot", True)
             self.dm_enabled = tg_cfg.get("dm_support", {}).get("enabled", False)
@@ -167,8 +178,11 @@ class _TelegramChannel:
             return
         
         # Filter out messages from other bots
-        if message.from_user and (message.from_user.is_bot or self.is_user_muted(message.from_user.id)):
-            return
+        if message.from_user:
+            if message.from_user.is_bot:
+                return
+            if await self.is_user_muted(message.from_user):
+                return
 
         if message.chat is not None:
             self.chat_id = message.chat.id
@@ -190,10 +204,6 @@ class _TelegramChannel:
             if not self.reply_only_on_tag or is_tagged or is_reply:
                 self._should_reply = True
             
-            if is_tagged or is_reply:
-                self._last_processed_window = f"{name}: {text}"
-                self._reply_to_id = message.message_id
-
 
     async def _window_manager(self):
         """Every window_seconds, batch buffered messages and surface them if bot was tagged."""
@@ -210,12 +220,15 @@ class _TelegramChannel:
                     # Use the last message's id for reply threading
                     self._reply_to_id = self._message_buffer[-1][3]
                     self._should_reply = False
+                else:
+                    self._last_processed_window = ""
                 
                 # Clear buffer (Retention rules apply: only keep for the window)
                 self._message_buffer = []
 
-    def is_user_muted(self, user_id):
+    async def is_user_muted(self, user: types.User):
         """Feature: User mute / cool-down after repeated abuse."""
+        user_id = user.id
         if user_id in self._muted_users:
             if time.time() < self._muted_users[user_id]:
                 return True
@@ -224,13 +237,28 @@ class _TelegramChannel:
                 
         now = time.time()
         history = self._user_msg_rates.get(user_id, [])
-        history = [ts for ts in history if now - ts < 10]
+        history = [ts for ts in history if now - ts < 10] # 10 second window for rate limiting
         history.append(now)
         self._user_msg_rates[user_id] = history
         
         if len(history) > 5:
-            logging.warning(f"User {user_id} muted for spamming.")
+            mute_count = self._user_mute_counts.get(user_id, 0) + 1
+            self._user_mute_counts[user_id] = mute_count
+
+            username = user.username or user.full_name or str(user_id)
+            logging.warning(f"User with id: {user_id} | username: {username} muted for spamming.")
             self._muted_users[user_id] = now + 120 # 2 minute cool-down
+            
+            if mute_count >= 3:
+                for admin_id in self.admin_ids:
+                    try:
+                        alert_msg = (f"🚨 **Spam Alert** 🚨\n"
+                                        f"User @{username} (ID: {user_id}) has been temporarily muted for spamming.\n"
+                                        f"Total times muted: {mute_count}")
+                        await self.bot.send_message(chat_id=admin_id, text=alert_msg)
+                    except Exception as e:
+                        logging.error(f"Failed to notify admin {admin_id}: {e}")
+                        
             return True
             
         return False
@@ -328,9 +356,14 @@ _channel = _TelegramChannel()
 
 def getLastMessage():
     """Return the last processed batch window."""
-    last_msg = _channel.get_last_message()
-    if last_msg is None:
-        return ""
+    timeout = 10
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        last_msg = _channel.get_last_message()
+        if last_msg is not None:
+            return str(last_msg)
+        
+        time.sleep(1)
         
     return str(last_msg)
 

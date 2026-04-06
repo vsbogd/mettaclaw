@@ -3,7 +3,7 @@ import time
 from tg_channel import start_telegram, getLastMessage, stop_telegram
 
 def main():
-    token = "8401184702:AAGDgJpuj6U7SyqRNqimQJ6RJqNZnjFPbmk"
+    token = "8401184702:AAENQ9__liFsqhBUh4wNIJKh1NtN1skFLD4"
     if not token:
         print("Please set the TG_BOT_TOKEN environment variable.")
         return
