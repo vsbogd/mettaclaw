@@ -9,3 +9,4 @@ jobs:
     uses: ./.github/workflows/common.yml
     with:
       publish-docker: true
+    secrets: inherit
