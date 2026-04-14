@@ -51,5 +51,5 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: ${{ inputs.publish_docker }}
           tags: |
-            singularitynet/omegaclaw:${{ inputs.tag_name }}
-            singularitynet/omegaclaw:latest
+            vitalysing/omegaclaw:${{ inputs.tag_name }}
+            vitalysing/omegaclaw:latest
