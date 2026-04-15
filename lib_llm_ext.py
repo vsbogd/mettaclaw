@@ -1,4 +1,5 @@
 import os, openai
+import llm_mock
 
 def _init_openai_client(var_name, base_url):
     if var_name in os.environ:
@@ -48,6 +49,9 @@ def useClaude(content):
         model="claude-opus-4-6",
         content=content
     )
+
+def useLlmMock(content):
+    return llm_mock.LlmMockClient.singleton().chat(content)
 
 _embedding_model = None
 
