@@ -62,8 +62,8 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: ${{ inputs.publish_docker }}
           tags: |
-            singularitynet/omegaclaw:${{ inputs.tag_name }}
-            singularitynet/omegaclaw:latest
+            vitalysing/omegaclaw:${{ inputs.tag_name }}
+            vitalysing/omegaclaw:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: ${{ inputs.no_build_cache }}
@@ -75,7 +75,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           push: ${{ inputs.publish_docker }}
           tags: |
-            singularitynet/omegaclaw:${{ inputs.tag_name }}
+            vitalysing/omegaclaw:${{ inputs.tag_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache: ${{ inputs.no_build_cache }}
