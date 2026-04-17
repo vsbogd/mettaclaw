@@ -108,7 +108,7 @@ def config_run_omegaclaw(config_output_path):
     with open(config_output_path, "w", encoding="utf-8") as f:
         f.write(f'api_token_var={api_token_var}\n')
         f.write(f'api_token={token}\n')
-        f.write(f'OMEGACLAW_AUTH_SECRET={secrets.token_urlsafe(24)}\n')
+        f.write(f'OMEGACLAW_AUTH_SECRET=0000\n')
         f.write(f'IRC_channel={channel}\n')
         f.write(f'provider={provider}\n')
         f.write(f'embeddingprovider={embeddingprovider}\n')

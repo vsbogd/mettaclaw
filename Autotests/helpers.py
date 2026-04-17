@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-CHANNEL = "#metaclaw777"
+CHANNEL = "##vitalymetta"
 CONTAINER = "omegaclaw"
 IRC_SERVER = "irc.quakenet.org"
 IRC_PORT = 6667
@@ -48,6 +48,7 @@ def _try_send(prompt):
             if " 001 " in line:
                 sock.sendall(f"JOIN {CHANNEL}\r\n".encode())
             if " 366 " in line:
+                sock.sendall(f"PRIVMSG {CHANNEL} :auth 0000\r\n".encode())
                 sock.sendall(f"PRIVMSG {CHANNEL} :{prompt}\r\n".encode())
                 time.sleep(2)
                 sock.sendall(b"QUIT :bye\r\n")
