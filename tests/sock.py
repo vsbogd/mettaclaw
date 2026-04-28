@@ -7,7 +7,7 @@ TIMEOUT_DEFAULT = 5
 _singletonClient = None
 _singletonServer = None
 
-class LlmMockStream:
+class SockStream:
 
     def __init__(self, sock):
         self.sock = sock
@@ -30,7 +30,7 @@ class LlmMockStream:
             self.buffer += data
 
 
-class LlmMockClient:
+class SockClient:
 
     def __init__(self, timeout=TIMEOUT_DEFAULT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -44,14 +44,14 @@ class LlmMockClient:
     def singleton():
         global _singletonClient
         if _singletonClient is None:
-            _singletonClient = LlmMockClient()
+            _singletonClient = SockClient()
             _singletonClient.connect()
         return _singletonClient
 
     def connect(self, host=HOST_DEFAULT,
                 port=PORT_DEFAULT):
         self.sock.connect((host, port))
-        self.stream = LlmMockStream(self.sock)
+        self.stream = SockStream(self.sock)
 
     def chat(self, content):
         try:
@@ -61,7 +61,7 @@ class LlmMockClient:
             return ""
 
 
-class LlmMockServer:
+class SockServer:
 
     def __init__(self, host=HOST_DEFAULT,
                  port=PORT_DEFAULT,
@@ -84,14 +84,14 @@ class LlmMockServer:
     def singleton():
         global _singletonServer
         if _singletonServer is None:
-            _singletonServer = LlmMockServer()
+            _singletonServer = SockServer()
             _singletonServer.accept()
         return _singletonServer
 
     def accept(self):
         self.conn, _addr = self.sock.accept()
         self.conn.settimeout(self.timeout)
-        self.stream = LlmMockStream(self.conn)
+        self.stream = SockStream(self.conn)
 
     def send(self, content):
         self.stream.send(content)

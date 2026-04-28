@@ -50,8 +50,16 @@ def useClaude(content):
         content=content
     )
 
+_LLM_MOCK = None
+
+def _llm_mock():
+    if not _LLM_MOCK:
+        from tests.mock import LlmMockAgent
+        _LLM_MOCK = LlmMockAgent()
+    return _LLM_MOCK
+
 def useLlmMock(content):
-    return llm_mock.LlmMockClient.singleton().chat(content)
+    return _llm_mock().chat(content)
 
 _embedding_model = None
 
