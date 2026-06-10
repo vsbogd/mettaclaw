@@ -8,7 +8,7 @@
 !(import! &self (library OmegaClaw-Core ./src/utils))
 !(import! &self (library OmegaClaw-Core ./src/helper.py))
 !(import! &self (library OmegaClaw-Core ./src/agentverse.py))
-!(import! &self (library OmegaClaw-Core ./channels/websearch.py))
+!(import! &self (library OmegaClaw-Core ./src/websearch.py))
 !(import! &self (library OmegaClaw-Core ./src/ext))
 !(import! &self (library OmegaClaw-Core ./src/skills))
 !(import! &self (library OmegaClaw-Core ./src/memory))

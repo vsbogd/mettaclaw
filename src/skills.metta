@@ -62,3 +62,7 @@
 
 (= (pin $x)
    PIN-SUCCESS)
+
+;Search the internet for some information:
+(= (search $msg)
+   (py-call (websearch.search $msg)))
