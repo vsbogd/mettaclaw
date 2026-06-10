@@ -68,7 +68,7 @@ The agent does not normally call `receive` itself; the loop wraps it:
 ```
 
 ### Purpose
-Perform a web search through the `channels/websearch.py` adapter.
+Perform a web search through the `src/websearch.py` adapter.
 
 ### Parameters
 - `query` — the search string.
