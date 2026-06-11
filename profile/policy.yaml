@@ -21,3 +21,29 @@ filesystem_policy:
   - /opt/sentence_transformers
 landlock:
   compatibility: best_effort
+agent_path_policy:
+  read_protected:
+  - memory/audit.metta
+  - memory/prompt.txt
+  - .git
+  - /proc
+  - /etc
+  - /dev
+  - ~/.ssh
+  write_protected:
+  - src
+  - channels
+  - scripts
+  - profile
+  - run.metta
+  - lib_omegaclaw.metta
+  - Dockerfile
+  - .git
+  - memory/audit.metta
+  - memory/prompt.txt
+  - memory/history.metta
+  - memory/chroma_db
+  - /proc
+  - /etc
+  - /dev
+  - ~/.ssh

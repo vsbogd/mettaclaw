@@ -30,17 +30,35 @@
 
 
 (= (read-file $file)
+   (let $verdict (py-call (policy.check_path_read $file))
+        (if (== $verdict "POLICY_ALLOW")
+            (sys-read-file $file)
+            $verdict)))
+
+(= (sys-read-file $file)
    (progn (translatePredicate (exists_file $file))
           (translatePredicate (read_file_to_string $file $content ()))
           $content))
 
 (= (write-file $file $str)
+   (let $verdict (py-call (policy.check_path_write $file))
+        (if (== $verdict "POLICY_ALLOW")
+            (sys-write-file $file $str)
+            $verdict)))
+
+(= (sys-write-file $file $str)
    (progn (translatePredicate (open $file write $Out))
           (translatePredicate (write $Out $str))
           (translatePredicate (close $Out))
           WRITE-FILE-SUCCESS))
 
 (= (append-file $file $str)
+   (let $verdict (py-call (policy.check_path_write $file))
+        (if (== $verdict "POLICY_ALLOW")
+            (sys-append-file $file $str)
+            $verdict)))
+
+(= (sys-append-file $file $str)
    (progn (translatePredicate (exists_file $file))
           (translatePredicate (open $file append $Out))
           (translatePredicate (write $Out $str))

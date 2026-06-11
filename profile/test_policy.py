@@ -1,10 +1,11 @@
 from pathlib import Path
+import os
 import pytest
 import tempfile
 import multiprocessing
 import subprocess
 import traceback
-from policy import FileSystemPolicy
+from policy import FileSystemPolicy, AgentPathPolicy, POLICY_ALLOW
 
 _TEST_POLICY_YAML = """
 version: 1
@@ -20,7 +21,7 @@ filesystem_policy:
   - {dir}/rw_file
   - {dir}/ro_dir/rw_dir
 landlock:
-  compatibility: hard_requirement
+  compatibility: best_effort
 """
 
 @pytest.fixture(scope="session")
@@ -198,4 +199,72 @@ def process_test_execute_shell(q, temp_dir):
     result = subprocess.run(['mkdir', '-p', str(path)])
     assert path.exists()
     path.rmdir()
+    q.put((True, None))
+
+def test_agent_read_protected_absolute():
+    p = AgentPathPolicy(read_protected=["/proc"])
+    assert p.check_read("/proc/self/environ").startswith("POLICY_DENIED")
+    assert p.check_read("/tmp/whatever") == POLICY_ALLOW
+
+def test_agent_read_protected_relative(tmp_path):
+    p = AgentPathPolicy(read_protected=["memory/audit.metta"], root=str(tmp_path))
+    assert p.check_read("memory/audit.metta").startswith("POLICY_DENIED")
+    assert p.check_read("memory/history.metta") == POLICY_ALLOW
+
+def test_agent_read_protected_traversal(tmp_path):
+    p = AgentPathPolicy(read_protected=["memory/audit.metta"], root=str(tmp_path))
+    assert p.check_read("memory/../memory/audit.metta").startswith("POLICY_DENIED")
+    assert p.check_read("memory/../other.txt") == POLICY_ALLOW
+
+def test_agent_read_protected_absolute_path(tmp_path):
+    p = AgentPathPolicy(read_protected=["memory/audit.metta"], root=str(tmp_path))
+    target = os.path.join(str(tmp_path), "memory", "audit.metta")
+    assert p.check_read(target).startswith("POLICY_DENIED")
+
+def test_agent_read_protected_symlink(tmp_path):
+    root = str(tmp_path)
+    mem = os.path.join(root, "memory")
+    os.makedirs(mem)
+    audit = os.path.join(mem, "audit.metta")
+    temp_file(audit, "secret")
+    link = os.path.join(root, "sneaky_link")
+    os.symlink(audit, link)
+    p = AgentPathPolicy(read_protected=["memory/audit.metta"], root=root)
+    assert p.check_read(link).startswith("POLICY_DENIED")
+
+def test_agent_write_protected(tmp_path):
+    p = AgentPathPolicy(write_protected=["src", "run.metta"], root=str(tmp_path))
+    assert p.check_write("src/loop.metta").startswith("POLICY_DENIED")
+    assert p.check_write("run.metta").startswith("POLICY_DENIED")
+    assert p.check_write("memory/notes.txt") == POLICY_ALLOW
+
+def test_agent_prompt_read_and_write_blocked(tmp_path):
+    p = AgentPathPolicy(read_protected=["memory/prompt.txt"],
+                        write_protected=["memory/prompt.txt"], root=str(tmp_path))
+    assert p.check_read("memory/prompt.txt").startswith("POLICY_DENIED")
+    assert p.check_write("memory/prompt.txt").startswith("POLICY_DENIED")
+    assert p.check_read("memory/output.txt") == POLICY_ALLOW
+
+def test_apply_skips_missing_paths(temp_dir):
+    run_in_separate_process(process_test_apply_skips_missing_paths, (temp_dir,))
+
+def process_test_apply_skips_missing_paths(q, temp_dir):
+    policy = FileSystemPolicy()
+    policy.load_str(f"""
+        version: 1
+        filesystem_policy:
+          include_workdir: false
+          read_only:
+          - /dev/urandom
+          - {temp_dir}/missing_ro_xyz
+          read_write:
+          - {temp_dir}/rw_dir
+          - {temp_dir}/missing_rw_xyz
+        landlock:
+          compatibility: best_effort
+    """)
+    policy.apply()
+    with open(f"{temp_dir}/rw_dir/after_apply", "w") as f:
+        f.write("ok")
+    Path(f"{temp_dir}/rw_dir/after_apply").unlink()
     q.put((True, None))
