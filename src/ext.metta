@@ -9,11 +9,28 @@
 
 ;configured at runtime:
 (= (commchannel) (empty))
-
 !(configure commchannel irc)
 
-!(let $commext (py-str ("./channels/" (commchannel)))
-   (progn (println! (py-str ("Loading communication channel extension" $commext)))
-          (import! &self (library OmegaClaw-Core $commext))
-          (import! &self (library OmegaClaw-Core src/channels))
-          ))
+(= (load-commchannel-py $extname)
+  (if (== 1 (py-call (ext.commchannel $extname)))
+    (progn (add-atom &self (= (commChannelReceiveMessage) (py-call (ext.commChannelReceiveMessage))))
+           (add-atom &self (= (commChannelSendMessage $msg) (py-call (ext.commChannelSendMessage $msg))))
+           True)
+    False))
+
+(= (empty-to-false $x)
+   (case $x
+     ((() False)
+      ($_ True))))
+
+
+(= (load-commchannel $extname)
+   (progn (println! (atom_concat "Loading communication channel extension: " $extname))
+          (if (empty-to-false (collapse (import! &self (library OmegaClaw-Core (atom_concat "./channels/" $extname))))) True
+          (if (empty-to-false (collapse (import! &self (library OmegaClaw-Core (atom_concat "./extensions/" $extname))))) True
+          (if (load-commchannel-py $extname) True
+          (progn (println! (atom_concat "Could not load communication channel extension: " $extname))
+                 False))))))
+
+!(load-commchannel (commchannel))
+!(import! &self (library OmegaClaw-Core src/channels))
