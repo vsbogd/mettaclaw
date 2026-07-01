@@ -92,104 +92,6 @@ class AIProvider(AbstractAIProvider):
         """Unescape special characters."""
         return text.replace("_quote_", '"').replace("_apostrophe_", "'")
 
-class OpenRouterProvider(AIProvider):
-    """OpenRouter provider with reasoning mode enabled (reasoning tokens excluded from the response)."""
-
-    def _create_client(self) -> Optional[openai.OpenAI]:
-        """Create OpenRouter client from environment."""
-        proxy_url = os.environ.get("GATEWAY_URL")
-        if proxy_url:
-            base_url = f"{proxy_url.rstrip('/')}/openrouter/"
-            print(f"[lib_llm_ext.OpenRouterProvider._create_client] Connecting via proxy: {base_url}")
-            return openai.OpenAI(
-                    api_key="proxy",
-                    base_url=base_url,
-                    )
-        if self._var_name in os.environ:
-            return openai.OpenAI(api_key=os.environ.get(self._var_name), base_url=self._base_url)
-
-        return None
-
-    def chat(self, content: str, max_tokens: int = 6000, reasoning: str = "medium", **kwargs) -> str:
-        return super().chat(content, max_tokens, reasoning, extra_body={
-            "reasoning": {
-                "enabled": True,
-                "max_tokens": 6000,
-                "exclude": True,
-            }
-        }, **kwargs)
-
-class AsiOneProvider(AIProvider):
-    """Lazy AI provider with on-demand initialization."""
-
-    def __init__(self, name: str, var_name: str, model_name: str, base_url: str):
-        super().__init__(name, var_name, model_name, base_url)
-
-    def chat(self, content: str, max_tokens: int = 6000, reasoning: str = "medium", **kwargs) -> str:
-        """Send chat request, initializing client if needed."""
-        self._ensure_client()
-
-        if self._client is None:
-            raise RuntimeError(f"{self.name} not configured (set {self._var_name})")
-
-        sysmsg, usermsg = content.split(":-:-:-:")
-        try:
-            response = self._client.chat.completions.create(
-                model=self._model_name,
-                messages=[{"role": "system", "content": sysmsg},
-                          {"role": "user", "content": usermsg}],
-                max_tokens=max_tokens,
-                extra_body={
-                    "enable_thinking": True,
-                    "thinking_budget": 6000 
-                },
-                **kwargs
-            )
-
-            raw = response.choices[0].message.content
-            _log_raw(self._name, self._model_name, raw)
-            resp = self._clean_text(raw)
-            resp = resp.replace("</arg_value>", " ").replace("</tool_call>", " ").replace("<arg_value>", " ").replace("<tool_call>", " ")
-            return resp
-        except Exception as e:
-            print(f"[lib_llm_ext.ASIOneProvider.chat] Exception while communicating with LLM: {e}")
-            return ""
-
-
-class OpenAIProvider(AIProvider):
-    """OpenAI provider using the Responses API (reasoning models)."""
-
-    def chat(self, content: str, max_tokens: int = 6000, reasoning: str = "medium", **kwargs) -> str:
-        """Send chat request via the Responses API, initializing client if needed."""
-        self._ensure_client()
-
-        if self._client is None:
-            raise RuntimeError(f"{self.name} not configured (set {self._var_name})")
-
-        if ":-:-:-:" in content:
-            sysmsg, usermsg = content.split(":-:-:-:", 1)
-        else:
-            sysmsg, usermsg = "", content
-        usermsg = usermsg.strip()
-        if not usermsg:
-            usermsg = "EMPTY / NO NEW USER INPUT."
-        try:
-            response = self._client.responses.create(
-                model=self._model_name,
-                instructions=sysmsg,
-                input=usermsg,
-                max_output_tokens=max_tokens,
-                reasoning={"effort": reasoning},
-                **kwargs
-            )
-
-            raw = response.output_text
-            _log_raw(self._name, self._model_name, raw)
-            return self._clean_text(raw)
-        except Exception as e:
-            print(f"[lib_llm_ext.OpenAIProvider.chat] Exception while communicating with LLM: {e}")
-            return ""
-
 
 class TestProvider(AbstractAIProvider):
     """Test provider for mocking LLM output"""
@@ -230,14 +132,7 @@ def _get_provider(name: str) -> Optional[AIProvider]:
 
 
 # Register all providers (cheap - just stores config)
-_register_provider(name="ASICloud", var_name="ASI_API_KEY", model_name="minimax/minimax-m3", base_url="https://inference.asicloud.cudos.org/v1")
-_register_provider(name="Anthropic", var_name="ANTHROPIC_API_KEY", model_name="claude-opus-4-8", base_url="https://api.anthropic.com/v1/")
-_register_provider(name="Ollama-local", var_name="OLLAMA_API_KEY", model_name="qwen3.5:9b", base_url="http://localhost:11434/v1")
-_register_provider_instance(AsiOneProvider(name="ASIOne", var_name="ASIONE_API_KEY", model_name="asi1-ultra", base_url="https://api.asi1.ai/v1"))
-_register_provider_instance(OpenRouterProvider(name="OpenRouter", var_name="OPENROUTER_API_KEY", model_name="z-ai/glm-5.2", base_url="https://openrouter.ai/api/v1"))
-_register_provider_instance(OpenRouterProvider(name="MiniMaxM3", var_name="OPENROUTER_API_KEY", model_name="minimax/minimax-m3", base_url="https://openrouter.ai/api/v1"))
 _register_provider_instance(TestProvider())
-_register_provider_instance(OpenAIProvider(name="OpenAI", var_name="OPENAI_API_KEY", model_name="gpt-5.5", base_url="https://api.openai.com/v1"))
 
 
 def callProvider(provider_name: str, content: str, max_tokens: int = 6000, reasoning: str = "medium") -> str:
