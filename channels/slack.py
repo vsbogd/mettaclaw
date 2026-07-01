@@ -7,6 +7,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import auth
+import pluginapi as plugin
 
 _running = False
 _last_message = ""
@@ -472,3 +473,22 @@ def send_message(text):
         except Exception as exc:
             print(f"[SLACK] Send failed: {exc}")
             return
+
+class SlackChannel(plugin.CommChannel):
+
+    def __init__(self):
+        super().__init__()
+
+    def config(self, config: dict) -> None:
+        channel = config.get("SL_CHANNEL_ID", "")
+        poll_interval = int(config.get("SL_POLL_INTERVAL", 60))
+        start_slack(channel, poll_interval)
+
+    def receive(self) -> str:
+        return getLastMessage()
+
+    def send(self, message: str) -> None:
+        send_message(message)
+
+def loadOmegaClawPlugin():
+    plugin.registerCommChannel("slack", SlackChannel())
