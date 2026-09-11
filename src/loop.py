@@ -103,24 +103,24 @@ def slow_wait_for_input():
 # --------------------------------------------------------------------
 # 3. Local tools:
 # --------------------------------------------------------------------
-INOPS = { "metta": (lambda sexpression: "SUCCESS, RETURN: " + str(metta(sexpression)), "Evaluate a MeTTa s-expression, since its a s-expression omit the ! in the beginning. Use (add-atom &persistent X) to add X to space, same for remove-atom."),
-          "pin": (lambda message: "SUCCESS, RETURN: " + run_metta("pin", message), "Pin a string as a short-term working-memory item to keep track of task state and relevant query results as query returns are only available once and gone next cycle."),
-          "episodes": (lambda timestamp: "SUCCESS, RETURN: " + run_metta("episodes", timestamp), "Search history for episodes around a timestamp in %Y-%m-%d %H:%M:%S format."),
-          "update": (lambda timestamp_ltm, updated_content: "SUCCESS, RETURN: " + run_metta("update", timestamp_ltm, updated_content), "Update the label and embedding of a memory, linked episodes and promotion will transfer over, time format here with underline: %Y-%m-%d_%H:%M:%S"),  
-          "link": (lambda timestamp_ltm, timestamp_episode: "SUCCESS, RETURN: " + run_metta("link", timestamp_ltm, timestamp_episode), "Link episode to LTM item, has no promotion effect, both times with %Y-%m-%d_%H:%M:%S format"),
-          "unlink": (lambda timestamp_ltm, timestamp_episode: "SUCCESS, RETURN: " + run_metta("unlink", timestamp_ltm, timestamp_episode), "Unlink episode from LTM, both times with %Y-%m-%d_%H:%M:%S format"),
-          "support": (lambda timestamp_ltm, timestamp_episode: "SUCCESS, RETURN: " + run_metta("support", timestamp_ltm, timestamp_episode), "When an episode supports LTM item, linking it to the episode time, and positively updating its truth value, bot times in %Y-%m-%d_%H:%M:%S format"),
-          "contradict": (lambda timestamp_ltm, timestamp_episode: "SUCCESS, RETURN: " + run_metta("contradict", timestamp_ltm, timestamp_episode), "When an episode contradicts LTM item, linking it to the episode time, and negatively updating its truth value, both times in %Y-%m-%d_%H:%M:%S format"),
-          "query": (lambda content: "SUCCESS, RETURN: " + run_metta("query", content), "Query long-term embedding memory using a short phrase."),
-          "remember": (lambda content: "SUCCESS, RETURN: " + run_metta("remember", content), "Remember a particular string such as a skill or memory."),
-          "forget": (lambda timestamp_ltm: "SUCCESS, RETURN: " + run_metta("forget", timestamp_ltm), "Forget a particular LTM item via its timestamp, arg format: %Y-%m-%d %H:%M:%S"),
-          "send": (lambda content: "SUCCESS, RETURN: " + run_metta("send", content), "To send a message to the user but keep yourself very brief."),
-          "nop": (lambda: print("NOP") or "SUCCESS", "Perform no action if task is complete, do not re-send!"),
-          "websearch": (lambda content: "SUCCESS, RETURN: " + run_metta("websearch", content), "Search the internet for content."),
-          "read-file": (lambda filename: "SUCCESS, RETURN: " + run_metta("read-file", filename), "Read a file."),
-          "write-file": (lambda filename, content: "SUCCESS, RETURN: " + run_metta("write-file", filename, content), "Write content to a file, replacing its previous contents."),
-          "append-file": (lambda filename, content: "SUCCESS, RETURN: " + run_metta("append-file", filename, content), "Append content to a file."),
-          "shell": (lambda cmd: "SUCCESS, RETURN: " + run_metta("shell", cmd), "Execute a shell command.") }
+INOPS = { #"metta": (lambda sexpression: "SUCCESS, RETURN: " + str(metta(sexpression)), "Evaluate a MeTTa s-expression, since its a s-expression omit the ! in the beginning. Use (add-atom &persistent X) to add X to space, same for remove-atom."),
+          #"pin": (lambda message: "SUCCESS, RETURN: " + run_metta("pin", message), "Pin a string as a short-term working-memory item to keep track of task state and relevant query results as query returns are only available once and gone next cycle."),
+          #"episodes": (lambda timestamp: "SUCCESS, RETURN: " + run_metta("episodes", timestamp), "Search history for episodes around a timestamp in %Y-%m-%d %H:%M:%S format."),
+          #"update": (lambda timestamp_ltm, updated_content: "SUCCESS, RETURN: " + run_metta("update", timestamp_ltm, updated_content), "Update the label and embedding of a memory, linked episodes and promotion will transfer over, time format here with underline: %Y-%m-%d_%H:%M:%S"),  
+          #"link": (lambda timestamp_ltm, timestamp_episode: "SUCCESS, RETURN: " + run_metta("link", timestamp_ltm, timestamp_episode), "Link episode to LTM item, has no promotion effect, both times with %Y-%m-%d_%H:%M:%S format"),
+          #"unlink": (lambda timestamp_ltm, timestamp_episode: "SUCCESS, RETURN: " + run_metta("unlink", timestamp_ltm, timestamp_episode), "Unlink episode from LTM, both times with %Y-%m-%d_%H:%M:%S format"),
+          #"support": (lambda timestamp_ltm, timestamp_episode: "SUCCESS, RETURN: " + run_metta("support", timestamp_ltm, timestamp_episode), "When an episode supports LTM item, linking it to the episode time, and positively updating its truth value, bot times in %Y-%m-%d_%H:%M:%S format"),
+          #"contradict": (lambda timestamp_ltm, timestamp_episode: "SUCCESS, RETURN: " + run_metta("contradict", timestamp_ltm, timestamp_episode), "When an episode contradicts LTM item, linking it to the episode time, and negatively updating its truth value, both times in %Y-%m-%d_%H:%M:%S format"),
+          #"query": (lambda content: "SUCCESS, RETURN: " + run_metta("query", content), "Query long-term embedding memory using a short phrase."),
+          #"remember": (lambda content: "SUCCESS, RETURN: " + run_metta("remember", content), "Remember a particular string such as a skill or memory."),
+          #"forget": (lambda timestamp_ltm: "SUCCESS, RETURN: " + run_metta("forget", timestamp_ltm), "Forget a particular LTM item via its timestamp, arg format: %Y-%m-%d %H:%M:%S"),
+          #"send": (lambda content: "SUCCESS, RETURN: " + run_metta("send", content), "To send a message to the user but keep yourself very brief."),
+          #"nop": (lambda: print("NOP") or "SUCCESS", "Perform no action if task is complete, do not re-send!"),
+          #"websearch": (lambda content: "SUCCESS, RETURN: " + run_metta("websearch", content), "Search the internet for content."),
+          #"read-file": (lambda filename: "SUCCESS, RETURN: " + run_metta("read-file", filename), "Read a file."),
+          #"write-file": (lambda filename, content: "SUCCESS, RETURN: " + run_metta("write-file", filename, content), "Write content to a file, replacing its previous contents."),
+          #"append-file": (lambda filename, content: "SUCCESS, RETURN: " + run_metta("append-file", filename, content), "Append content to a file."),
+          #"shell": (lambda cmd: "SUCCESS, RETURN: " + run_metta("shell", cmd), "Execute a shell command.") }
 
 def native_tools(inops):
     tools = []
@@ -158,17 +158,22 @@ while True:
         else:
             temporary_message += [{"role": "user", "content": "Step " + get_current_time() + ": [NO ADDITIONAL USER INPUT. CONTINUE THE CURRENT USER TASK.]"}]
         recent_messages = messages_all[-EPISODIC_TRACE_SIZE:]
+        # remove all "role": "tool" messages from the beginning
         while recent_messages and recent_messages[0].get("role") == "tool":
             recent_messages = recent_messages[1:]
         while True:
             response = client.chat.completions.create(model=MODEL, messages=selfprompt + recent_messages + temporary_message, tools=TOOLS, tool_choice="required", max_tokens=MAX_TOKENS)
             message = response.choices[0].message
             if message.tool_calls:
+                # restrict number of tool calls by MAX_TOOL_CALLS
                 message.tool_calls = message.tool_calls[:MAX_TOOL_CALLS]
                 break
             temporary_message += [{"role": "user", "content": "Your previous response was invalid. Do not answer in plain text. Call at least one tool now."}]
         print(f"RESPONSE {response}\nFINISH_REASON {response.choices[0].finish_reason}\nUSAGE {response.usage}")
+        # replace "role":"tool" content[:RETURN_VALUE_PRESERVE] by
+        # "... omitted" in all messages
         messages_all = [{**old_message, "content": old_message.get("content", "")[:RETURN_VALUE_PRESERVE] + " ... omitted"} if old_message.get("role") == "tool" and " ... omitted" not in old_message.get("content", "") else old_message for old_message in messages_all]
+        # add message for the last tool call
         messages_all += [{**{key: value for key, value in message.model_dump(exclude_none=True).items() if key not in ("reasoning", "reasoning_details", "reasoning_content")}, "content": "Step " + get_current_time() + ": [TOOL CALL]"}]
         tool_outputs = []
         for tool_call in message.tool_calls:
@@ -180,7 +185,13 @@ while True:
                 ret = f"Invalid tool arguments from model: {error}"
             else:
                 try:#unless tool unknown/args formatting issue, we use the tool's INOPS function return value:
-                    ret = f"Unknown tool: {tool_name!r}" if tool_name not in INOPS else "Tool arguments must be a JSON object" if not isinstance(tool_arguments, dict) else INOPS[tool_name][0](**tool_arguments)
+                    if tool_name not in INOPS:
+                        ret = f"Unknown tool: {tool_name!r}"
+                    else:
+                        if not isinstance(tool_arguments, dict):
+                            ret = "Tool arguments must be a JSON object"
+                        else:
+                            ret = INOPS[tool_name][0](**tool_arguments)
                 except Exception as error:
                     ret = f"Tool execution failed: {type(error).__name__}: {error}"
             ret = str(ret)[:MAX_TOOL_OUTPUT_CHARS]

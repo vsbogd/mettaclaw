@@ -22,8 +22,8 @@ class OpenRouterProvider(providers.LLMProvider):
     def stop(self) -> None:
         self.delegate.stop()
 
-    def chat(self, prompt: str, max_tokens: int = 6000, reasoning_mode: str = "medium") -> str:
-        return self.delegate.chat(prompt, max_tokens, reasoning_mode)
+    def chat(self, args: providers.LLMRequest) -> str:
+        return self.delegate.chat(args)
 
 def loadOmegaClawPlugin():
     providers.registerLLMProvider("OpenRouter", OpenRouterProvider())
